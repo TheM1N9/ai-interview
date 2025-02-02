@@ -1,0 +1,239 @@
+.profile-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    color: var(--text-primary);
+}
+
+.user-info {
+    margin-bottom: 20px;
+}
+
+h2 {
+    color: var(--accent-color);
+}
+
+h3 {
+    margin-top: 20px;
+    color: var(--text-primary);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--text-secondary);
+    border-radius: 4px;
+}
+
+.upload-button,
+.logout-button {
+    background-color: var(--accent-color);
+    color: #FFFFFF;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upload-button:hover,
+.logout-button:hover {
+    background-color: var(--accent-hover);
+}
+
+.success-message {
+    padding: 10px 15px;
+    background-color: rgba(76, 175, 80, 0.1);
+    border: 1px solid #4CAF50;
+    border-radius: 4px;
+    color: #4CAF50;
+    margin-bottom: 15px;
+}
+
+.error-message {
+    padding: 10px 15px;
+    background-color: rgba(244, 67, 54, 0.1);
+    border: 1px solid #F44336;
+    border-radius: 4px;
+    color: #F44336;
+    margin-bottom: 15px;
+}
+
+.info-group {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: var(--bg-primary);
+    border-radius: 6px;
+}
+
+.info-group label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.info-group p {
+    margin: 5px 0;
+    font-size: 1.1rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: var(--accent-color);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.9rem;
+}
+
+.profile-section {
+    margin: 30px 0;
+    padding: 20px;
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+}
+
+.resume-form {
+    margin-top: 15px;
+}
+
+.logout-button {
+    margin-top: 20px;
+    width: 100%;
+    background-color: #dc3545;
+}
+
+.logout-button:hover {
+    background-color: #c82333;
+}
+
+.file-upload-container {
+    margin-bottom: 20px;
+}
+
+.file-upload-input {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+.file-upload-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background-color: var(--bg-secondary);
+    border: 2px dashed var(--text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-upload-label:hover {
+    border-color: var(--accent-color);
+    background-color: rgba(var(--accent-color-rgb), 0.1);
+}
+
+.file-upload-icon {
+    font-size: 1.5rem;
+}
+
+.file-upload-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.resumes-list {
+    margin-top: 15px;
+}
+
+.resume-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    transition: transform 0.2s ease;
+}
+
+.resume-item:hover {
+    transform: translateX(4px);
+}
+
+.resume-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    flex-grow: 1;
+}
+
+.resume-info:hover {
+    background-color: var(--bg-hover);
+}
+
+.resume-icon {
+    font-size: 1.5rem;
+}
+
+.resume-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.resume-name {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.resume-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.delete-resume-button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.delete-resume-button:hover {
+    background-color: rgba(244, 67, 54, 0.1);
+}
+
+.no-resumes {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .profile-container {
+        margin: 10px;
+        padding: 15px;
+    }
+} 

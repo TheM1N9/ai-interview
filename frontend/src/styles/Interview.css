@@ -1,0 +1,156 @@
+.interview-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-title {
+    font-size: 2rem;
+    color: var(--accent-color);
+    margin-bottom: 20px;
+}
+
+.question-card {
+    background-color: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    transition: transform 0.2s ease;
+    color: var(--text-primary);
+}
+
+.question-card:hover {
+    transform: translateY(-2px);
+}
+
+.question-card h3 {
+    font-size: 1.5rem;
+    color: #222222;
+    margin-bottom: 10px;
+}
+
+.question-card p {
+    color: #222222;
+    line-height: 1.5;
+}
+
+.answer-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #D84315;
+    border-radius: 4px;
+    margin-top: 10px;
+    resize: vertical;
+    background-color: #F5F5F5;
+    color: #212121;
+}
+
+.submit-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    background-color: #FF5722;
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.submit-button:hover {
+    background-color: #E64A19;
+}
+
+.answer-analysis {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 4px solid #007bff;
+}
+
+.answer-analysis ul {
+    list-style: none;
+    padding: 0;
+}
+
+.answer-analysis li {
+    margin: 5px 0;
+}
+
+.answer-analysis p {
+    margin-top: 10px;
+}
+
+.feedback-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.feedback-card h3 {
+    color: #222222;
+}
+
+.feedback-content {
+    color: #333333;
+}
+
+.feedback-title {
+    font-size: 1.8rem;
+    color: #FF6D00;
+    margin-bottom: 10px;
+}
+
+.feedback-subtitle {
+    font-size: 1.5rem;
+    color: #222222;
+}
+
+.feedback-body {
+    color: #333333;
+}
+
+.feedback-button {
+    background-color: #0D47A1;
+    color: #FFFFFF;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.feedback-button:hover {
+    background-color: #0A3E8C;
+}
+
+h2 {
+    font-size: 1.8rem;
+    color: var(--accent-color);
+    margin-bottom: 10px;
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.interview-complete-title {
+    color: #FF6D00;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
