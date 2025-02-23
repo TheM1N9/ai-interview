@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import VideoRecorder from "./VideoRecorder";
 import "../styles/Landing.css";
 import "../styles/Interview.css";
 import "../styles/Dashboard.css";
+import "../styles/VideoRecorder.css";
 
 function Interview() {
   const location = useLocation();
@@ -12,42 +14,51 @@ function Interview() {
   const [currentQuestion, setCurrentQuestion] = useState(
     location.state?.firstQuestion || ""
   );
-  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [questionCount, setQuestionCount] = useState(1);
   const [answerAnalysis, setAnswerAnalysis] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
 
-  const handleSubmitAnswer = async (e) => {
-    e.preventDefault();
+  const handleStartRecording = () => {
+    setIsRecording(true);
+  };
+
+  const handleStopRecording = () => {
+    setIsRecording(false);
+  };
+
+  const handleRecordingComplete = async (videoBlob) => {
     setLoading(true);
+    const formData = new FormData();
+    formData.append("video", videoBlob, "interview_video.webm");
+    formData.append("previous_question", currentQuestion);
+    formData.append("company", location.state?.company);
+    formData.append("question_count", questionCount);
 
     try {
+      const token = localStorage.getItem("token");
+
       const response = await fetch("http://localhost:8000/next-question", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          previous_question: currentQuestion,
-          answer: answer,
-          company: location.state?.company,
-          question_count: questionCount,
-        }),
+        body: formData,
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
-      // Update answer analysis
       setAnswerAnalysis(data.analysis);
 
       if (data.done) {
-        // Interview is complete
         setFeedback(data.final_feedback);
       } else {
-        // Continue with next question
         setCurrentQuestion(data.next_question);
-        setAnswer("");
         setQuestionCount((prev) => prev + 1);
       }
     } catch (error) {
@@ -77,27 +88,41 @@ function Interview() {
   return (
     <div className="interview-container">
       <h2 className="dashboard-title">
-        Technical Interview - Question {questionCount}
+        Technical Interview{" "}
+        {questionCount > 0 ? `- Question ${questionCount}` : ""}
       </h2>
       <div className="question-card">
         <h3>Question:</h3>
         <p>{currentQuestion}</p>
 
-        <form onSubmit={handleSubmitAnswer}>
-          <div className="form-group">
-            <label>Your Answer:</label>
-            <textarea
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              rows="4"
-              required
-              className="answer-textarea"
-            />
+        <div className="video-section">
+          <VideoRecorder
+            onRecordingComplete={handleRecordingComplete}
+            isRecording={isRecording}
+            onStopRecording={handleStopRecording}
+          />
+          <div className="recording-controls">
+            {!isRecording ? (
+              <button
+                className="record-button"
+                onClick={handleStartRecording}
+                disabled={loading}
+              >
+                Start Recording
+              </button>
+            ) : (
+              <button
+                className="stop-button"
+                onClick={handleStopRecording}
+                disabled={loading}
+              >
+                Stop Recording
+              </button>
+            )}
           </div>
-          <button type="submit" className="submit-button" disabled={loading}>
-            {loading ? "Processing..." : "Submit Answer"}
-          </button>
-        </form>
+        </div>
+
+        {loading && <p className="loading-message">Analyzing your answer...</p>}
 
         {answerAnalysis && (
           <div className="answer-analysis">
@@ -106,10 +131,12 @@ function Interview() {
               <li>
                 Technical Accuracy: {answerAnalysis.technical_accuracy}/10
               </li>
-              <li>Completeness: {answerAnalysis.completeness}/10</li>
               <li>
                 Communication Clarity: {answerAnalysis.communication_clarity}/10
               </li>
+              <li>Body Language: {answerAnalysis.body_language}/10</li>
+              <li>Eye Contact: {answerAnalysis.eye_contact}/10</li>
+              <li>Speaking Pace: {answerAnalysis.speaking_pace}/10</li>
             </ul>
             <p>
               <strong>Feedback:</strong> {answerAnalysis.feedback}

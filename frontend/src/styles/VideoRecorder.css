@@ -1,0 +1,105 @@
+.video-recorder {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: var(--bg-secondary);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.video-preview {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16/9;
+  background-color: #000;
+  border-radius: 12px;
+}
+
+.recording-indicator {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recording-dot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  color: white;
+  font-weight: bold;
+}
+
+.recording-dot::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background-color: #ff4444;
+  border-radius: 50%;
+  animation: pulse 1.5s ease infinite;
+}
+
+.error-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(244, 67, 54, 0.9);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  text-align: center;
+  z-index: 10;
+}
+
+.recording-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.record-button,
+.stop-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  color: #FFFFFF;
+}
+
+.record-button {
+  background-color: #4CAF50; /* Green */
+}
+
+.record-button:hover {
+  background-color: #45A049; /* Darker green */
+}
+
+.stop-button {
+  background-color: #F44336; /* Red */
+  margin-left: 10px; /* Space between buttons */
+}
+
+.stop-button:hover {
+  background-color: #D32F2F; /* Darker red */
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+} 

@@ -5,6 +5,7 @@ token.pickle
 service_account.json
 test.py
 .venv
+resumes/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

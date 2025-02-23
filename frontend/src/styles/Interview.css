@@ -12,6 +12,7 @@
     font-size: 2rem;
     color: var(--accent-color);
     margin-bottom: 20px;
+    text-align: center;
 }
 
 .question-card {
@@ -136,6 +137,7 @@ h2 {
     font-size: 1.8rem;
     color: var(--accent-color);
     margin-bottom: 10px;
+    text-align: center;
 }
 
 h3 {
@@ -153,4 +155,5 @@ p {
     color: #FF6D00;
     font-size: 2rem;
     margin-bottom: 10px;
+    text-align: center;
 }

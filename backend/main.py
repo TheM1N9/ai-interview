@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import google.generativeai as genai
 import os
-from typing import Optional
+from typing import Dict, Optional
 import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
@@ -15,6 +15,8 @@ import jwt
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
+import time
+import logging
 
 load_dotenv()
 
@@ -205,68 +207,60 @@ async def upload_resume(
 
 
 @app.post("/next-question")
-async def get_next_question(request: dict):
+async def get_next_question(
+    video: UploadFile = File(...),
+    previous_question: str = Form(...),
+    company: str = Form(...),
+    question_count: int = Form(...),
+    current_user: dict = Depends(get_current_user),
+):
     # Analyze the answer first
-    analysis_prompt = f"""Analyze this answer to the technical question: 
-    Question: '{request['previous_question']}'
-    Answer: '{request['answer']}'
-    
-    Rate the answer on:
-    1. Technical accuracy (1-10)
-    2. Completeness (1-10)
-    3. Communication clarity (1-10)
-    
-    Return the analysis as a JSON object with these fields and a 'continue_interview' boolean 
-    indicating if we should continue with more questions. Set it to false if:
-    - The answer quality is very poor (average score < 4)
-    - We've reached 5 questions
-    - The candidate has demonstrated sufficient knowledge or the candidate is not interested in the company or the candidate lacks the skills to be a good fit for the company
-    
-    Also include a 'feedback' field with specific constructive feedback about the answer."""
+    video_analysis = await analyze_interview_video(
+        video=video,
+        question=previous_question,
+        company=company,
+        question_count=question_count,
+    )
 
-    analysis_result = model.generate_content(analysis_prompt)
-    print(analysis_result.text.strip())
+    print(f"video_analysis: {video_analysis}")
 
-    # Fix the regex pattern to properly capture the JSON content
-    result = re.search(r"```json\n(.*?)\n```", analysis_result.text, re.DOTALL)
-    if result:
-        try:
-            # Extract the JSON content from group 1 (what's inside the parentheses in regex)
-            json_str = result.group(1)
-            analysis = json.loads(json_str)
-        except json.JSONDecodeError as e:
-            print(f"Error parsing JSON: {e}")
-            analysis = {}
-    else:
-        print("No JSON found in the response")
-        analysis = {}
+    # Determine if we should continue the interview
+    average_score = (
+        video_analysis[0]["technical_accuracy"]
+        + video_analysis[0]["communication_clarity"]
+        + video_analysis[0]["body_language"]
+        + video_analysis[0]["eye_contact"]
+        + video_analysis[0]["speaking_pace"]
+    ) / 5
 
-    print(analysis)
+    logging.debug(f"average_score: {average_score}")
 
-    if not analysis.get("continue_interview", True):
-        # Return final feedback if we're done
+    continue_interview = True
+    if average_score < 3:
+        continue_interview = False
+
+    if not continue_interview:
         final_prompt = f"""Based on all the previous interactions, provide a comprehensive feedback summary for the candidate.
         Include:
         1. Overall technical proficiency
         2. Key strengths demonstrated
         3. Areas for improvement
-        4. Readiness for a role at {request['company']}
+        4. Readiness for a role at {company}
         
         Make it constructive and actionable."""
 
         final_feedback = model.generate_content(final_prompt)
         return {
             "done": True,
-            "analysis": analysis,
+            "analysis": str(video_analysis),
             "final_feedback": final_feedback.text.strip(),
         }
 
     # Generate next question if continuing
-    next_question_prompt = f"""Based on the previous question: '{request['previous_question']}'
-    and the candidate's answer: '{request['answer']}'
+    next_question_prompt = f"""Based on the previous question: '{previous_question}'
     
     The answer was rated as follows:
-    {analysis}
+    {video_analysis}
     
     Generate a follow-up technical question that:
     1. Addresses any weaknesses shown in the previous answer
@@ -275,8 +269,16 @@ async def get_next_question(request: dict):
     
     Return ONLY the question as a string."""
 
+    # Use the model to generate the next question
     result = model.generate_content(next_question_prompt)
-    return {"done": False, "next_question": result.text.strip(), "analysis": analysis}
+
+    print(f"next question:{result.text.strip()}")
+
+    return {
+        "done": False,
+        "next_question": result.text.strip(),
+        "analysis": video_analysis,
+    }
 
 
 @app.post("/upload-user-resume")
@@ -434,3 +436,111 @@ def verify_token(token: str):
     except Exception as e:
         print(e)
         return None
+
+
+# Video analysis function
+def upload_to_gemini(path, mime_type=None):
+    """Uploads the given file to Gemini."""
+    file = genai.upload_file(path, mime_type=mime_type)
+    print(f"Uploaded file '{file.display_name}' as: {file.uri}")
+    return file
+
+
+def wait_for_files_active(files):
+    """Waits for the given files to be active."""
+    print("Waiting for file processing...")
+    for name in (file.name for file in files):
+        file = genai.get_file(name)
+        while file.state.name == "PROCESSING":
+            print(".", end="", flush=True)
+            time.sleep(10)
+            file = genai.get_file(name)
+        if file.state.name != "ACTIVE":
+            raise Exception(f"File {file.name} failed to process")
+    print("...all files ready")
+    print()
+
+
+def analyze_video(video_path: str) -> tuple[dict, str]:
+    scores = {
+        "technical_accuracy": 0,
+        "communication_clarity": 0,
+        "body_language": 0,
+        "eye_contact": 0,
+        "speaking_pace": 0,
+    }
+
+    feedback = ""
+
+    # Upload video to Gemini
+    video_file = upload_to_gemini(video_path, mime_type="video/mp4")
+
+    # Wait for the video file to be processed
+    wait_for_files_active([video_file])
+
+    # Create the model for analysis
+    generation_config = {
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_output_tokens": 8192,
+        "response_mime_type": "text/plain",
+    }
+
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-pro-exp-02-05",
+        generation_config=generation_config,
+    )
+
+    prompt = """
+                Analyze the video and provide feedback, and provide detailed analysis. 
+                The feedback should be in the following format:
+                ```json
+                {
+                    scores = {
+                    "technical_accuracy": 0,
+                    "communication_clarity": 0,
+                    "body_language": 0,
+                    "eye_contact": 0,
+                    "speaking_pace": 0,
+                   },
+                feedback = ""
+                }
+                ```
+                if some of the scores are not applicable, set them to 0.
+                """
+
+    chat_session = model.start_chat(history=[])
+
+    json_response = chat_session.send_message([prompt, video_file]).text
+    # print(json_response)
+
+    response = re.search(r"```json\n(.*?)\n```", json_response, re.DOTALL)
+    if response:
+        feedback = json.loads(response.group(1))
+        scores = feedback.get("scores", {})
+        feedback = feedback.get("feedback", "")
+
+    return scores, feedback
+
+
+@app.post("/analyze-video")
+async def analyze_interview_video(
+    video: UploadFile = File(...),
+    question: str = Form(...),
+    company: str = Form(...),
+    question_count: int = Form(...),
+) -> tuple[Dict[str, int], str]:
+    scores: Dict[str, int] = {}
+    feedback: str = ""
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
+        content = await video.read()
+        temp_video.write(content)
+        temp_video.flush()
+
+        scores, feedback = analyze_video(temp_video.name)
+        # scores = json.loads(scores)
+        # os.unlink(temp_video.name)
+
+    return scores, feedback
