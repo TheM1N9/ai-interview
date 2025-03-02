@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import "../styles/Auth.css";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Card, CardHeader, CardContent, CardFooter } from "./ui/card";
+import { Alert, AlertDescription } from "./ui/alert";
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -26,26 +29,23 @@ function Login() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h2>Welcome Back</h2>
-          <p>Please sign in to continue</p>
-        </div>
-
-        {error && (
-          <div className="auth-error">
-            <span className="error-icon">⚠️</span>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            {/* <label>Username</label> */}
-            <div className="input-group">
-              {/* <span className="input-icon">👤</span> */}
-              <input
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <h2 className="text-2xl font-bold text-center">Welcome Back</h2>
+          <p className="text-muted-foreground text-center">
+            Please sign in to continue
+          </p>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -53,13 +53,8 @@ function Login() {
                 required
               />
             </div>
-          </div>
-
-          <div className="form-group">
-            {/* <label>Password</label> */}
-            <div className="input-group">
-              {/* <span className="input-icon">🔒</span> */}
-              <input
+            <div className="space-y-2">
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -67,19 +62,20 @@ function Login() {
                 required
               />
             </div>
-          </div>
-
-          <button type="submit" className="auth-button">
-            Sign In
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          <p>
-            Don't have an account? <Link to="/register">Sign Up</Link>
+            <Button type="submit" className="w-full">
+              Sign In
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-primary hover:underline">
+              Sign Up
+            </Link>
           </p>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

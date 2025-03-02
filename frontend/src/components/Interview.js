@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import VideoRecorder from "./VideoRecorder";
+import { Card, CardContent, CardHeader } from "./ui/card";
+import { Button } from "./ui/button";
+import { Volume2, Loader2 } from "lucide-react";
 import "../styles/Landing.css";
 import "../styles/Interview.css";
 import "../styles/Dashboard.css";
@@ -20,13 +23,8 @@ function Interview() {
   const [answerAnalysis, setAnswerAnalysis] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
 
-  const handleStartRecording = () => {
-    setIsRecording(true);
-  };
-
-  const handleStopRecording = () => {
-    setIsRecording(false);
-  };
+  const handleStartRecording = () => setIsRecording(true);
+  const handleStopRecording = () => setIsRecording(false);
 
   const handleRecordingComplete = async (videoBlob) => {
     setLoading(true);
@@ -38,23 +36,17 @@ function Interview() {
 
     try {
       const token = localStorage.getItem("token");
-
       const response = await fetch("http://localhost:8000/next-question", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const data = await response.json();
 
       setAnswerAnalysis(data.analysis);
-
       if (data.done) {
         setFeedback(data.final_feedback);
       } else {
@@ -69,12 +61,9 @@ function Interview() {
   };
 
   const readQuestionAloud = (question) => {
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
+    if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(question);
-
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
@@ -84,7 +73,6 @@ function Interview() {
       const englishVoice = voices.find(
         (voice) => voice.lang.includes("en") && voice.name.includes("Female")
       );
-
       utterance.voice = englishVoice || voices[0];
     }
 
@@ -93,113 +81,146 @@ function Interview() {
 
   useEffect(() => {
     if (currentQuestion) {
-      const timer = setTimeout(() => {
-        readQuestionAloud(currentQuestion);
-      }, 500);
-
+      const timer = setTimeout(() => readQuestionAloud(currentQuestion), 500);
       return () => clearTimeout(timer);
     }
   }, [currentQuestion]);
 
   if (feedback) {
     return (
-      <div className="interview-container">
-        <h2 className="interview-complete-title">Interview Complete</h2>
-        <div className="feedback-card">
-          <h3>Final Feedback</h3>
-          <div className="feedback-content">
-            <ReactMarkdown>{feedback}</ReactMarkdown>
-          </div>
-          <button className="feedback-button" onClick={() => navigate("/")}>
-            Start New Interview
-          </button>
-        </div>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Card className="w-full">
+          <CardHeader>
+            <h2 className="text-2xl font-bold text-center">
+              Interview Complete
+            </h2>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="prose dark:prose-invert max-w-none">
+              <ReactMarkdown>{feedback}</ReactMarkdown>
+            </div>
+            <Button className="w-full mt-4" onClick={() => navigate("/")}>
+              Start New Interview
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="interview-container">
-      <h2 className="dashboard-title">
-        Technical Interview{" "}
-        {questionCount > 0 ? `- Question ${questionCount}` : ""}
-      </h2>
-      <div className="question-card">
-        {/* <h3>Question:</h3> */}
-        <div className="question-container">
-          <h3>{currentQuestion}</h3>
-          <button
-            className="read-aloud-button"
-            onClick={() => readQuestionAloud(currentQuestion)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <Card className="w-full">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">
+              Technical Interview{" "}
+              {questionCount > 0 && `- Question ${questionCount}`}
+            </h2>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => readQuestionAloud(currentQuestion)}
+              className="h-8 w-8"
             >
-              <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-            </svg>
-            Read Aloud
-          </button>
-        </div>
-
-        <div className="video-section">
-          <VideoRecorder
-            onRecordingComplete={handleRecordingComplete}
-            isRecording={isRecording}
-            onStopRecording={handleStopRecording}
-          />
-          <div className="recording-controls">
-            {!isRecording ? (
-              <button
-                className="record-button"
-                onClick={handleStartRecording}
-                disabled={loading}
-              >
-                Start Recording
-              </button>
-            ) : (
-              <button
-                className="stop-button"
-                onClick={handleStopRecording}
-                disabled={loading}
-              >
-                Stop Recording
-              </button>
-            )}
+              <Volume2 className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
-
-        {loading && <p className="loading-message">Analyzing your answer...</p>}
-
-        {answerAnalysis && (
-          <div className="answer-analysis">
-            <h4>Previous Answer Analysis:</h4>
-            <ul>
-              <li>
-                Technical Accuracy: {answerAnalysis.technical_accuracy}/10
-              </li>
-              <li>
-                Communication Clarity: {answerAnalysis.communication_clarity}/10
-              </li>
-              <li>Body Language: {answerAnalysis.body_language}/10</li>
-              <li>Eye Contact: {answerAnalysis.eye_contact}/10</li>
-              <li>Speaking Pace: {answerAnalysis.speaking_pace}/10</li>
-            </ul>
-            <p>
-              <strong>Feedback:</strong> {answerAnalysis.feedback}
-            </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-muted p-4 rounded-lg">
+            <p className="text-lg">{currentQuestion}</p>
           </div>
-        )}
-      </div>
+
+          <div className="space-y-4">
+            <VideoRecorder
+              onRecordingComplete={handleRecordingComplete}
+              isRecording={isRecording}
+              onStopRecording={handleStopRecording}
+            />
+
+            <div className="flex justify-center">
+              {!isRecording ? (
+                <Button
+                  onClick={handleStartRecording}
+                  disabled={loading}
+                  className="w-full max-w-sm"
+                >
+                  Start Recording
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleStopRecording}
+                  disabled={loading}
+                  variant="destructive"
+                  className="w-full max-w-sm"
+                >
+                  Stop Recording
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {loading && (
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <p>Analyzing your answer...</p>
+            </div>
+          )}
+
+          {answerAnalysis && (
+            <Card>
+              <CardHeader>
+                <h3 className="text-lg font-semibold">
+                  Previous Answer Analysis
+                </h3>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Technical Accuracy</span>
+                      <span className="font-semibold">
+                        {answerAnalysis.technical_accuracy}/10
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Communication Clarity</span>
+                      <span className="font-semibold">
+                        {answerAnalysis.communication_clarity}/10
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Body Language</span>
+                      <span className="font-semibold">
+                        {answerAnalysis.body_language}/10
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Eye Contact</span>
+                      <span className="font-semibold">
+                        {answerAnalysis.eye_contact}/10
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Speaking Pace</span>
+                      <span className="font-semibold">
+                        {answerAnalysis.speaking_pace}/10
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <p className="font-semibold">Feedback:</p>
+                  <p className="mt-2">{answerAnalysis.feedback}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
