@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import VideoRecorder from "./VideoRecorder";
@@ -68,6 +68,39 @@ function Interview() {
     }
   };
 
+  const readQuestionAloud = (question) => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+
+    const utterance = new SpeechSynthesisUtterance(question);
+
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      const englishVoice = voices.find(
+        (voice) => voice.lang.includes("en") && voice.name.includes("Female")
+      );
+
+      utterance.voice = englishVoice || voices[0];
+    }
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    if (currentQuestion) {
+      const timer = setTimeout(() => {
+        readQuestionAloud(currentQuestion);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentQuestion]);
+
   if (feedback) {
     return (
       <div className="interview-container">
@@ -92,8 +125,31 @@ function Interview() {
         {questionCount > 0 ? `- Question ${questionCount}` : ""}
       </h2>
       <div className="question-card">
-        <h3>Question:</h3>
-        <p>{currentQuestion}</p>
+        {/* <h3>Question:</h3> */}
+        <div className="question-container">
+          <h3>{currentQuestion}</h3>
+          <button
+            className="read-aloud-button"
+            onClick={() => readQuestionAloud(currentQuestion)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+            Read Aloud
+          </button>
+        </div>
 
         <div className="video-section">
           <VideoRecorder

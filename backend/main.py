@@ -461,7 +461,7 @@ def wait_for_files_active(files):
     print()
 
 
-def analyze_video(video_path: str) -> tuple[dict, str]:
+def analyze_video(video_path: str) -> tuple[dict, str, str]:
     scores = {
         "technical_accuracy": 0,
         "communication_clarity": 0,
@@ -471,6 +471,7 @@ def analyze_video(video_path: str) -> tuple[dict, str]:
     }
 
     feedback = ""
+    answer = ""
 
     # Upload video to Gemini
     video_file = upload_to_gemini(video_path, mime_type="video/mp4")
@@ -493,18 +494,20 @@ def analyze_video(video_path: str) -> tuple[dict, str]:
     )
 
     prompt = """
-                Analyze the video and provide feedback, and provide detailed analysis. 
+                You are an interviewer. Analyze the video and provide feedback, and provide detailed analysis. 
+                Answer is what is the candidate saying.
                 The feedback should be in the following format:
                 ```json
                 {
-                    scores = {
-                    "technical_accuracy": 0,
-                    "communication_clarity": 0,
-                    "body_language": 0,
-                    "eye_contact": 0,
-                    "speaking_pace": 0,
-                   },
-                feedback = ""
+                    "scores": {
+                        "technical_accuracy": 0,
+                        "communication_clarity": 0,
+                        "body_language": 0,
+                        "eye_contact": 0,
+                        "speaking_pace": 0
+                    },
+                    "feedback": "",
+                    "answer": ""
                 }
                 ```
                 if some of the scores are not applicable, set them to 0.
@@ -513,15 +516,20 @@ def analyze_video(video_path: str) -> tuple[dict, str]:
     chat_session = model.start_chat(history=[])
 
     json_response = chat_session.send_message([prompt, video_file]).text
-    # print(json_response)
 
     response = re.search(r"```json\n(.*?)\n```", json_response, re.DOTALL)
     if response:
-        feedback = json.loads(response.group(1))
-        scores = feedback.get("scores", {})
-        feedback = feedback.get("feedback", "")
+        try:
+            response_dict = json.loads(response.group(1))
+            scores = response_dict.get("scores", scores)
+            feedback = response_dict.get("feedback", "")
+            answer = response_dict.get("answer", "")
+        except json.JSONDecodeError:
+            print("Failed to parse JSON response")
+    else:
+        print("No JSON response found")
 
-    return scores, feedback
+    return scores, feedback, answer
 
 
 @app.post("/analyze-video")
@@ -530,17 +538,14 @@ async def analyze_interview_video(
     question: str = Form(...),
     company: str = Form(...),
     question_count: int = Form(...),
-) -> tuple[Dict[str, int], str]:
-    scores: Dict[str, int] = {}
-    feedback: str = ""
-
+) -> tuple[Dict[str, int], str, str]:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
         content = await video.read()
         temp_video.write(content)
         temp_video.flush()
 
-        scores, feedback = analyze_video(temp_video.name)
-        # scores = json.loads(scores)
+        scores, feedback, answer = analyze_video(temp_video.name)
+        # Remove the temporary file
         # os.unlink(temp_video.name)
 
-    return scores, feedback
+    return scores, feedback, answer
