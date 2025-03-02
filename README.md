@@ -1,9 +1,6 @@
-I'll help create a comprehensive README.md for the project. Based on the codebase, this appears to be an AI-powered interview preparation application with video analysis capabilities.
-
-```markdown:README.md
 # InterviewPrep AI
 
-InterviewPrep AI is a modern web application that helps users prepare for technical interviews through AI-powered video analysis and adaptive questioning. The application uses Gemini AI to analyze interview responses and provide personalized feedback.
+InterviewPrep AI is a web application that helps users prepare for technical interviews through AI-powered video analysis and adaptive questioning. The application also analyzes and reviews interview responses and provide personalized feedback.
 
 ## Features
 
