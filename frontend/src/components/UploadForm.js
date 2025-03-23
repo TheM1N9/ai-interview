@@ -7,6 +7,7 @@ import "../styles/Dashboard.css";
 function UploadForm() {
   const [file, setFile] = useState(null);
   const [company, setCompany] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [userResumes, setUserResumes] = useState([]);
   const [selectedResume, setSelectedResume] = useState("");
@@ -62,6 +63,7 @@ function UploadForm() {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("company", company);
+        formData.append("job_description", jobDescription);
 
         response = await fetch("http://localhost:8000/upload", {
           method: "POST",
@@ -80,6 +82,7 @@ function UploadForm() {
           body: JSON.stringify({
             filename: selectedResume,
             company: company,
+            job_description: jobDescription,
           }),
         });
       }
@@ -129,14 +132,23 @@ function UploadForm() {
       <h2>Enter Details</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          {/* <label>Company Name</label> */}
-
           <input
             type="text"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             required
             placeholder="Enter company name"
+          />
+        </div>
+
+        <div className="form-group">
+          <textarea
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            required
+            placeholder="Enter job description"
+            rows="4"
+            className="job-description-input"
           />
         </div>
 
@@ -184,7 +196,6 @@ function UploadForm() {
             </div>
           ) : (
             <div className="form-group">
-              {/* <label>Select Resume</label> */}
               <select
                 value={selectedResume}
                 onChange={(e) => setSelectedResume(e.target.value)}

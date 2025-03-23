@@ -12,6 +12,7 @@ import Register from "./components/Register";
 import Profile from "./components/Profile";
 import Interview from "./components/Interview";
 import UploadForm from "./components/UploadForm";
+import FeedbackDashboard from "./components/FeedbackDashboard";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import "./App.css";

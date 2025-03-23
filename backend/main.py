@@ -69,7 +69,7 @@ app.add_middleware(
 
 # Configure Gemini AI
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-pro")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 
 # Auth functions
@@ -153,6 +153,7 @@ async def update_profile(
 async def upload_resume(
     file: UploadFile = File(...),
     company: str = Form(...),
+    job_description: str = Form(...),
     current_user: dict = Depends(get_current_user),
 ):
     temp_file_path = None
@@ -188,8 +189,11 @@ async def upload_resume(
         resume_file = genai.upload_file(Path(file_location))
 
         # Generate prompt for single question
-        prompt = f"""Based on this resume, generate ONE technical interview question that might be asked at {company}.
-        The question should be challenging but appropriate for the candidate's experience level.
+        prompt = f"""Based on this resume and the following job description:
+        {job_description}
+        
+        Generate ONE technical interview question that might be asked at {company} for this specific role.
+        The question should be challenging but appropriate for the candidate's experience level and relevant to the job requirements.
         Return ONLY the question as a string, no additional text or formatting."""
 
         # Generate response using Gemini
@@ -212,6 +216,7 @@ async def get_next_question(
     previous_question: str = Form(...),
     company: str = Form(...),
     question_count: int = Form(...),
+    interview_history: str = Form(...),
     current_user: dict = Depends(get_current_user),
 ):
     # Analyze the answer first
@@ -222,9 +227,19 @@ async def get_next_question(
         question_count=question_count,
     )
 
-    print(f"video_analysis: {video_analysis}")
+    # Add current Q&A to history
+    current_qa = {
+        "question": previous_question,
+        "answer": video_analysis[2],  # The answer
+        "feedback": video_analysis[1],  # The feedback
+        "scores": video_analysis[0],  # The scores
+    }
 
-    # Determine if we should continue the interview
+    # Parse existing history and append current Q&A
+    history = json.loads(interview_history) if interview_history else []
+    history.append(current_qa)
+
+    # Calculate average score
     average_score = (
         video_analysis[0]["technical_accuracy"]
         + video_analysis[0]["communication_clarity"]
@@ -233,27 +248,125 @@ async def get_next_question(
         + video_analysis[0]["speaking_pace"]
     ) / 5
 
-    logging.debug(f"average_score: {average_score}")
-
-    continue_interview = True
-    if average_score < 3:
-        continue_interview = False
+    continue_interview = average_score >= 3
 
     if not continue_interview:
-        final_prompt = f"""Based on all the previous interactions, provide a comprehensive feedback summary for the candidate.
+        # Create a comprehensive summary of the entire interview
+        qa_summary = "\n".join(
+            [
+                f"""
+            Question {i+1}: {qa['question']}
+            Answer: {qa['answer']}
+            Feedback: {qa['feedback']}
+            Scores:
+            - Technical Accuracy: {qa['scores']['technical_accuracy']}
+            - Communication Clarity: {qa['scores']['communication_clarity']}
+            - Body Language: {qa['scores']['body_language']}
+            - Eye Contact: {qa['scores']['eye_contact']}
+            - Speaking Pace: {qa['scores']['speaking_pace']}
+            """
+                for i, qa in enumerate(history)
+            ]
+        )
+
+        # Calculate overall metrics
+        overall_metrics = {
+            "technical_accuracy": sum(
+                qa["scores"]["technical_accuracy"] for qa in history
+            )
+            / len(history),
+            "communication_clarity": sum(
+                qa["scores"]["communication_clarity"] for qa in history
+            )
+            / len(history),
+            "body_language": sum(qa["scores"]["body_language"] for qa in history)
+            / len(history),
+            "eye_contact": sum(qa["scores"]["eye_contact"] for qa in history)
+            / len(history),
+            "speaking_pace": sum(qa["scores"]["speaking_pace"] for qa in history)
+            / len(history),
+        }
+
+        # Generate detailed analysis prompt
+        analysis_prompt = f"""Based on the complete interview history:
+
+        {qa_summary}
+
+        For a role at {company}, provide a detailed analysis in the following JSON format:
+        {{
+            "overall_assessment": "Overall assessment of the candidate's performance",
+            "strengths": ["List of key strengths demonstrated"],
+            "weaknesses": ["List of areas needing improvement"],
+            "technical_analysis": "Detailed analysis of technical knowledge and problem-solving",
+            "communication_analysis": "Analysis of communication skills and clarity",
+            "recommendations": ["Specific actionable recommendations for improvement"],
+            "readiness_level": "Assessment of readiness for the role (e.g., 'Ready', 'Needs Improvement', 'Not Ready')",
+            "interview_duration": "Estimated duration of the interview",
+            "question_count": {len(history)}
+        }}
+
+        Make the analysis constructive and actionable. Return ONLY the JSON object, no additional text or formatting."""
+
+        # Generate detailed analysis
+        analysis_result = model.generate_content(analysis_prompt)
+        try:
+            # Try to find JSON in the response
+            json_match = re.search(
+                r"```json\n(.*?)\n```", analysis_result.text, re.DOTALL
+            )
+            if json_match:
+                analysis_data = json.loads(json_match.group(1))
+            else:
+                # If no JSON block found, try to parse the entire response
+                analysis_data = json.loads(analysis_result.text)
+        except json.JSONDecodeError:
+            print("Failed to parse analysis JSON, using default values")
+            analysis_data = {
+                "overall_assessment": "Unable to generate detailed analysis",
+                "strengths": [],
+                "weaknesses": [],
+                "technical_analysis": "Analysis not available",
+                "communication_analysis": "Analysis not available",
+                "recommendations": [],
+                "readiness_level": "Unknown",
+                "interview_duration": "Unknown",
+                "question_count": len(history),
+            }
+
+        # Generate final feedback
+        final_prompt = f"""Based on the complete interview history:
+
+        {qa_summary}
+
+        For a role at {company}, provide a comprehensive feedback summary for the candidate.
         Include:
-        1. Overall technical proficiency
-        2. Key strengths demonstrated
-        3. Areas for improvement
+        1. Overall technical proficiency across all questions
+        2. Key strengths demonstrated throughout the interview
+        3. Areas for improvement based on consistent patterns
         4. Readiness for a role at {company}
+        5. Specific recommendations for improvement
+
+        Give Feedback in MarkDown format.
         
         Make it constructive and actionable."""
 
         final_feedback = model.generate_content(final_prompt)
+
         return {
             "done": True,
             "analysis": str(video_analysis),
             "final_feedback": final_feedback.text.strip(),
+            "interview_history": history,
+            "dashboard_data": {
+                "overall_metrics": overall_metrics,
+                "detailed_analysis": analysis_data,
+                "interview_summary": {
+                    "total_questions": len(history),
+                    "average_scores": overall_metrics,
+                    "company": company,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            },
         }
 
     # Generate next question if continuing
@@ -269,15 +382,13 @@ async def get_next_question(
     
     Return ONLY the question as a string."""
 
-    # Use the model to generate the next question
     result = model.generate_content(next_question_prompt)
-
-    print(f"next question:{result.text.strip()}")
 
     return {
         "done": False,
         "next_question": result.text.strip(),
         "analysis": video_analysis,
+        "interview_history": history,
     }
 
 
@@ -374,8 +485,12 @@ async def use_existing_resume(
         resume_file = genai.upload_file(Path(resume_info["file_path"]))
 
         # Generate prompt for single question
-        prompt = f"""Based on this resume, generate ONE technical interview question that might be asked at {request["company"]}.
-        The question should be challenging but appropriate for the candidate's experience level.
+        prompt = f"""Based on this resume and the following job description:
+        {request["job_description"]}
+        
+        Generate ONE technical interview question that might be asked at {request["company"]} for this specific role.
+        The question should be challenging but appropriate for the candidate's experience level and relevant to the job requirements.
+        Ask the question based on the resume.
         Return ONLY the question as a string, no additional text or formatting."""
 
         # Generate response using Gemini

@@ -5,6 +5,7 @@ const VideoRecorder = ({
   onRecordingComplete,
   isRecording,
   onStopRecording,
+  onRecordingStart,
 }) => {
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -66,6 +67,7 @@ const VideoRecorder = ({
 
     mediaRecorderRef.current = mediaRecorder;
     mediaRecorder.start();
+    onRecordingStart?.();
   };
 
   const stopRecording = () => {
