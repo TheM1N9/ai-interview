@@ -11,3 +11,5 @@ bcrypt
 opencv-python 
 moviepy 
 SpeechRecognition
+pandas
+openpyxl

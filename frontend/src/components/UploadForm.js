@@ -7,6 +7,7 @@ import "../styles/Dashboard.css";
 function UploadForm() {
   const [file, setFile] = useState(null);
   const [company, setCompany] = useState("");
+  const [companies, setCompanies] = useState([]);
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [userResumes, setUserResumes] = useState([]);
@@ -21,6 +22,7 @@ function UploadForm() {
 
   useEffect(() => {
     fetchUserResumes();
+    fetchCompanies();
   }, []);
 
   const fetchUserResumes = async () => {
@@ -36,6 +38,23 @@ function UploadForm() {
       }
     } catch (error) {
       console.error("Failed to fetch resumes");
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/companies");
+      if (!response.ok) {
+        throw new Error("Failed to fetch companies");
+      }
+      const data = await response.json();
+      setCompanies(data.companies);
+    } catch (error) {
+      console.error("Failed to fetch companies");
+      setNotification({
+        message: "Failed to load companies",
+        type: "error",
+      });
     }
   };
 
@@ -132,13 +151,19 @@ function UploadForm() {
       <h2>Enter Details</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <input
-            type="text"
+          <select
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             required
-            placeholder="Enter company name"
-          />
+            className="company-select"
+          >
+            <option value="">Select a company</option>
+            {companies.map((companyName) => (
+              <option key={companyName} value={companyName}>
+                {companyName}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">

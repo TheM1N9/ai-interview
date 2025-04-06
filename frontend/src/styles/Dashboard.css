@@ -225,4 +225,28 @@ select option {
 .start-interview-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.company-select {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    transition: var(--transition-fast);
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.company-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.company-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 0.5rem;
 } 

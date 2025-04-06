@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import google.generativeai as genai
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
@@ -17,6 +17,9 @@ from pydantic import BaseModel
 from fastapi.responses import FileResponse
 import time
 import logging
+import pandas as pd
+import random
+from csv import QUOTE_ALL
 
 load_dotenv()
 
@@ -56,6 +59,10 @@ class ResumeInfo(BaseModel):
     filename: str
     upload_date: str
     file_path: str
+
+
+class CompanyResponse(BaseModel):
+    companies: List[str]
 
 
 # Configure CORS
@@ -664,3 +671,74 @@ async def analyze_interview_video(
         # os.unlink(temp_video.name)
 
     return scores, feedback, answer
+
+
+@app.get("/companies")
+async def get_companies():
+    try:
+        # Read the CSV file with proper quoting
+        df = pd.read_excel("data.xlsx")
+        # Get unique companies and sort them
+        companies = sorted(df["company"].unique().tolist())
+        return {"companies": companies}
+    except Exception as e:
+        print(f"Error reading CSV: {str(e)}")  # Add logging for debugging
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/generate-questions-from-data")
+async def generate_questions_from_data(
+    request,
+):  # -> dict[str, Any | list[str] | list[Any]]:# -> dict[str, Any | list[str] | list[Any]]:# -> dict[str, Any | list[str] | list[Any]]:
+    try:
+        # Read the CSV file
+        df = pd.read_csv("data.csv")
+
+        # Filter questions for the specific company
+        company_data = df[df["company"].str.lower() == request.company.lower()]
+
+        if company_data.empty:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No questions found for company: {request.company}",
+            )
+
+        # Get all questions for the company
+        questions = company_data["questions"].tolist()
+
+        # If we have more questions than requested, randomly sample
+        if len(questions) > request.num_questions:
+            questions = random.sample(questions, request.num_questions)
+
+        # Generate prompt for Gemini to analyze and enhance the questions
+        prompt = f"""Based on these existing questions for {request.company}:
+        {json.dumps(questions)}
+        
+        Please analyze and enhance these questions to make them more relevant and challenging.
+        Return the enhanced questions as a JSON array of strings.
+        Keep the same number of questions as provided."""
+
+        result = model.generate_content(prompt)
+
+        try:
+            # Try to find JSON in the response
+            json_match = re.search(r"\[.*\]", result.text, re.DOTALL)
+            if json_match:
+                enhanced_questions = json.loads(json_match.group())
+            else:
+                # If no JSON array found, split by newlines and clean up
+                enhanced_questions = [
+                    q.strip() for q in result.text.split("\n") if q.strip()
+                ]
+                enhanced_questions = enhanced_questions[
+                    : len(questions)
+                ]  # Keep same number of questions
+        except json.JSONDecodeError:
+            enhanced_questions = (
+                questions  # Fall back to original questions if parsing fails
+            )
+
+        return {"questions": enhanced_questions}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
