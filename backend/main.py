@@ -366,7 +366,10 @@ async def get_next_question(
             "interview_history": history,
             "dashboard_data": {
                 "overall_metrics": overall_metrics,
-                "detailed_analysis": analysis_data,
+                "detailed_analysis": {
+                    **analysis_data,
+                    "final_feedback": final_feedback.text.strip(),
+                },
                 "interview_summary": {
                     "total_questions": len(history),
                     "average_scores": overall_metrics,

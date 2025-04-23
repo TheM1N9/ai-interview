@@ -181,8 +181,8 @@ function FeedbackDashboard({ interviewHistory, dashboardData }) {
             <div className="space-y-6">
               <div>
                 <h4 className="font-semibold mb-2">Overall Assessment</h4>
-                <div className="prose prose-invert max-w-none">
-                  <ReactMarkdown>
+                <div className="prose prose-invert max-w-none markdown-feedback dark:prose-invert">
+                  <ReactMarkdown className="markdown-content">
                     {detailed_analysis.overall_assessment}
                   </ReactMarkdown>
                 </div>
@@ -210,16 +210,16 @@ function FeedbackDashboard({ interviewHistory, dashboardData }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h4 className="font-semibold mb-2">Technical Analysis</h4>
-                  <div className="prose prose-invert max-w-none">
-                    <ReactMarkdown>
+                  <div className="prose prose-invert max-w-none markdown-feedback dark:prose-invert">
+                    <ReactMarkdown className="markdown-content">
                       {detailed_analysis.technical_analysis}
                     </ReactMarkdown>
                   </div>
                 </div>
                 <div>
                   <h4 className="font-semibold mb-2">Communication Analysis</h4>
-                  <div className="prose prose-invert max-w-none">
-                    <ReactMarkdown>
+                  <div className="prose prose-invert max-w-none markdown-feedback dark:prose-invert">
+                    <ReactMarkdown className="markdown-content">
                       {detailed_analysis.communication_analysis}
                     </ReactMarkdown>
                   </div>
@@ -279,8 +279,8 @@ function FeedbackDashboard({ interviewHistory, dashboardData }) {
               <h3 className="text-lg font-semibold">Final Feedback</h3>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-invert max-w-none">
-                <ReactMarkdown>
+              <div className="prose prose-invert max-w-none markdown-feedback dark:prose-invert">
+                <ReactMarkdown className="markdown-content">
                   {detailed_analysis.final_feedback}
                 </ReactMarkdown>
               </div>
